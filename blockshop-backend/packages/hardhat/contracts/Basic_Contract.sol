@@ -2,17 +2,21 @@
 pragma solidity ^0.8.18;
 
 // Importing the Celo StableToken interface
-interface ICeloStableToken {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function balanceOf(address account) external view returns (uint256);
+interface IERC20Token {
+    function transfer(address, uint256) external returns (bool);
+    function approve(address, uint256) external returns (bool);
+    function transferFrom(address, address, uint256) external returns (bool);
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address) external view returns (uint256);
+    function allowance(address, address) external view returns (uint256);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-interface IERC20 {
-    function balanceOf(address account) external view returns (uint256);}
-
 contract CeloPayments {
-    address public owner; // myy address?
+    uint internal productsLength = 0;
+    address public owner;
     address public stableToken = 0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9;
     
     // Events for tracking
@@ -22,12 +26,21 @@ contract CeloPayments {
     event LoanGranted(address indexed provider, address indexed borrower, uint256 amount);
     event LoanRepaid(address indexed provider, address indexed borrower, uint256 amount);
 
+    struct Product {
+        address payable owner;
+        string name;
+        string description;
+        uint price;
+        uint sold;
+    }
+
     struct MicroLoan {
         uint256 amount;
         uint256 dueDate;
         bool repaid;
     }
 
+    mapping(uint => Product) internal products;
     mapping(address => uint256) public balances; 
     mapping(address => MicroLoan) public loans;
 
@@ -36,13 +49,49 @@ contract CeloPayments {
         _;
     }
 
-    constructor(address _stableToken) {
-        owner = msg.sender;
-        stableToken = _stableToken;
+    function writeProduct(string memory _name, string memory _description, uint _price) public{
+        uint _sold = 0;
+        products[productsLength] = Product(
+            payable(msg.sender),
+            _name,
+            _description,
+            _price,
+            _sold
+        );
+        productsLength++;
+    }
+
+    function readProduct(uint _index)public view returns (
+            address payable,
+            string memory,
+            string memory,
+            uint,
+            uint
+        )
+    {
+        return (
+            products[_index].owner,
+            products[_index].name,
+            products[_index].description,
+            products[_index].price,
+            products[_index].sold
+        );
+    }
+
+    function buyProduct(uint _index) public payable {
+        require(
+            IERC20Token(stableToken).transferFrom(
+                msg.sender,
+                products[_index].owner,
+                products[_index].price
+            ),
+            "Transfer failed."
+        );
+        products[_index].sold++;
     }
 
     function deposit(address user, uint256 amount) external onlyOwner {
-        require(ICeloStableToken(stableToken).transfer(user, amount), "Transfer failed");
+        require(IERC20Token(stableToken).transfer(user, amount), "Transfer failed");
         emit Deposit(user, amount);
     }
 
@@ -78,7 +127,7 @@ contract CeloPayments {
             repaid: false
         });
 
-        require(ICeloStableToken(stableToken).transfer(borrower, amount), "borrow failed");
+        require(IERC20Token(stableToken).transfer(borrower, amount), "borrow failed");
         emit LoanGranted(provider ,borrower, amount);
     }
 
@@ -92,7 +141,12 @@ contract CeloPayments {
         loan.repaid = true;
         loan.amount = 0;
 
-        require(ICeloStableToken(stableToken).transfer(address(this), amount), "Repayment failed");
+        require(IERC20Token(stableToken).transfer(address(this), amount), "Repayment failed");
         emit LoanRepaid(borrower, provider, amount);
     }
+
+    function getProductsLength() public view returns (uint) {
+        return (productsLength);
+    }
+
 }
