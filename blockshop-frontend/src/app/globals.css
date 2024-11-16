@@ -40,22 +40,50 @@ body {
 }
 
 @font-face {
-  font-family: "Poppins-ExtraLight";
-  src: url("/fonts/Poppins-ExtraLight.otf") format("opentype");
-  font-weight: 200; 
-  font-style: normal; 
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraLight.otf') format('opentype');
+  font-weight: 200; /* ExtraLight */
+  font-style: normal;
 }
 
 @font-face {
-  font-family: "Poppins-Regular";
-  src: url("/fonts/Poppins-Regular.otf") format("opentype");
-  font-weight: 300; 
-  font-style: normal; 
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraLightItalic.otf') format('opentype');
+  font-weight: 200; /* ExtraLight Italic */
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Medium.otf') format('opentype');
+  font-weight: 500; /* Medium */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Regular.otf') format('opentype');
+  font-weight: 400; /* Regular */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBold.otf') format('opentype');
+  font-weight: 600; /* SemiBold */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Thin.otf') format('opentype');
+  font-weight: 100; /* Thin */
+  font-style: normal;
 }
 
 @font-face {
   font-family: "Rakkas-Regular";
   src: url("/fonts/Rakkas-Regular.otf") format("opentype");
-  font-weight: normal;
+  font-weight: 400;
   font-style: normal;
 }
