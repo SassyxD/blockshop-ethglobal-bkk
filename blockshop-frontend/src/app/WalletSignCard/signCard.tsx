@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 interface WalletCardProps {
   onConnect: (walletType: string) => void;
@@ -26,23 +27,14 @@ const WalletCard: React.FC<WalletCardProps> = ({ onConnect }) => {
           Connect MetaMask
         </button>
         <button
-          onClick={() => onConnect("Celo")}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mb-4 flex items-center justify-center"
-        >
-          <img
-            src="https://raw.githubusercontent.com/celo-org/celo-monorepo/master/packages/images/icon.png"
-            alt="Celo"
-            className="w-6 h-6 mr-3"
-          />
-          Connect Celo
-        </button>
-        <button
           onClick={() => onConnect("MiniPay")}
           className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 flex items-center justify-center"
         >
-          <img
-            src="/images/minipay-icon.png" // Add your MiniPay icon to `public/images`
-            alt="MiniPay"
+          <Image
+            src="/images/minipayicon.svg" // เส้นทางภาพ
+            alt="MiniPay" // ข้อความ alt
+            width={24} // กำหนดความกว้าง
+            height={24} // กำหนดความสูง
             className="w-6 h-6 mr-3"
           />
           Connect MiniPay

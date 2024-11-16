@@ -65,25 +65,34 @@ const App: React.FC = () => {
         alert("Celo Wallet not found. Please install Celo Wallet.");
         return;
       }
-      await provider.enable(); // สำหรับ Celo Wallet ต้อง enable ก่อนใช้งาน
+      try {
+        await provider.enable(); // เปิดการใช้งาน Celo Wallet
+      } catch (error) {
+        console.error("Error enabling Celo Wallet:", error);
+        alert("Failed to enable Celo Wallet. Please try again.");
+        return;
+      }
+    } else {
+      alert("Unsupported wallet type.");
+      return;
     }
 
     try {
-      const web3 = new Web3(provider);
-      const accounts = await web3.eth.requestAccounts(); // ใช้ requestAccounts() เพื่อขอ Address
+      const web3 = new Web3(provider); // ใช้งาน Web3 กับ Provider
+      const accounts = await web3.eth.requestAccounts(); // ดึงบัญชีที่เชื่อมต่อ
       if (accounts.length === 0) {
-        console.error("No accounts found. Please unlock your wallet.");
+        alert("No accounts found. Please unlock your wallet.");
         return;
       }
-
       const address = accounts[0];
       setWalletAddress(address);
       setWeb3Instance(web3);
       await fetchBalance(web3, address);
       setIsPopupVisible(false);
+      console.log(`Connected to ${walletType}: ${address}`);
     } catch (error) {
-      console.error("Error connecting wallet:", error);
-      alert("Failed to connect wallet. Please try again.");
+      console.error(`Error connecting to ${walletType}:`, error);
+      alert(`Failed to connect to ${walletType}. Please try again.`);
     }
   };
 
