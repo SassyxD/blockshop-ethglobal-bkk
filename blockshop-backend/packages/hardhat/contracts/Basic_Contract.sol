@@ -8,6 +8,9 @@ interface ICeloStableToken {
     function balanceOf(address account) external view returns (uint256);
 }
 
+interface IERC20 {
+    function balanceOf(address account) external view returns (uint256);}
+
 contract CeloPayments {
     address public owner; // myy address?
     address public stableToken = 0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9;
@@ -16,8 +19,8 @@ contract CeloPayments {
     event Deposit(address indexed user, uint256 amount);
     event Withdrawal(address indexed user, uint256 amount);
     event Transfer(address indexed sender, address indexed recipient, uint256 amount);
-    event LoanGranted(address indexed bank, address indexed borrower, uint256 amount);
-    event LoanRepaid(address indexed bank, address indexed borrower, uint256 amount);
+    event LoanGranted(address indexed provider, address indexed borrower, uint256 amount);
+    event LoanRepaid(address indexed provider, address indexed borrower, uint256 amount);
 
     struct MicroLoan {
         uint256 amount;
@@ -25,6 +28,7 @@ contract CeloPayments {
         bool repaid;
     }
 
+    mapping(address => uint256) public balances; 
     mapping(address => MicroLoan) public loans;
 
     modifier onlyOwner() {
@@ -37,20 +41,23 @@ contract CeloPayments {
         stableToken = _stableToken;
     }
 
-    /**
-     * @dev Pay salary to an employee.
-     * @param employee Address of the employee.
-     * @param amount Amount in cUSD to be transferred.
-     */
-    function Deposit(address user, uint256 amount) external onlyOwner {
+    function deposit(address user, uint256 amount) external onlyOwner {
         require(ICeloStableToken(stableToken).transfer(user, amount), "Transfer failed");
-        emit Deposited(user, amount);
+        emit Deposit(user, amount);
     }
 
-    function Withdrawal(address user, uint256 amount) external onlyOwner {
-        require(user.balanceOf > amount, "You don't have enough money.");
-        emit Withdrawal(user, amount);
+    function withdraw(uint256 amount) external {
+        uint256 userBalance = balances[msg.sender];
+        
+        require(userBalance >= amount, "Insufficient balance");
+
+        // Update the user's balance before transferring the Ether
+        balances[msg.sender] -= amount;
+
+        // Transfer Ether to the user
+        payable(msg.sender).transfer(amount);
     }
+
 
     function transfer(address recipient, uint256 amount) external {
         require(amount > 0, "Amount must be greater than zero");
@@ -64,7 +71,7 @@ contract CeloPayments {
 
     function grantLoan(address borrower, uint256 amount, uint256 duration) external onlyOwner {
         require(loans[borrower].amount == 0, "Borrower already has an active loan");
-
+        address provider = msg.sender;
         loans[borrower] = MicroLoan({
             amount: amount,
             dueDate: block.timestamp + duration,
@@ -72,19 +79,20 @@ contract CeloPayments {
         });
 
         require(ICeloStableToken(stableToken).transfer(borrower, amount), "borrow failed");
-        emit LoanGranted(borrower, amount);
+        emit LoanGranted(provider ,borrower, amount);
     }
 
     function repayLoan() external {
         MicroLoan storage loan = loans[msg.sender];
         require(loan.amount > 0, "No active loan");
         require(block.timestamp <= loan.dueDate, "Loan overdue");
-
+        address provider = msg.sender;
+        address borrower = address(this);
         uint256 amount = loan.amount;
         loan.repaid = true;
         loan.amount = 0;
 
         require(ICeloStableToken(stableToken).transfer(address(this), amount), "Repayment failed");
-        emit LoanRepaid(msg.sender, amount);
+        emit LoanRepaid(borrower, provider, amount);
     }
 }
