@@ -11,7 +11,7 @@ contract MiniPay is
     ERC721,
     ERC721URIStorage,
     ERC721Pausable,
-    Ownable,
+    Ownable,    
     ERC721Burnable
 {
     uint256 private _nextTokenId;
