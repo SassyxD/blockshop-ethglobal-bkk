@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 // Importing the Celo StableToken interface
-interface IERC20Token {
+interface ERC20 {
     function transfer(address, uint256) external returns (bool);
     function approve(address, uint256) external returns (bool);
     function transferFrom(address, address, uint256) external returns (bool);
@@ -13,18 +16,31 @@ interface IERC20Token {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
-
+    
 contract CeloPayments {
+    using SafeERC20 for IERC20;
+
     uint internal productsLength = 0;
     address public owner;
-    address public stableToken = 0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9;
-    
+    address public stableToken;
+
     // Events for tracking
     event Deposit(address indexed user, uint256 amount);
     event Withdrawal(address indexed user, uint256 amount);
     event Transfer(address indexed sender, address indexed recipient, uint256 amount);
     event LoanGranted(address indexed provider, address indexed borrower, uint256 amount);
     event LoanRepaid(address indexed provider, address indexed borrower, uint256 amount);
+    event ProductSold(address indexed buyer, address indexed seller, uint256 price);
+
+     constructor(address _stableToken) {
+        owner = msg.sender;
+        stableToken = _stableToken;
+    }
+
+    // in this case is 0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9
+    function updateTokenAddress(address newToken) external onlyOwner {
+        stableToken = newToken;
+}
 
     struct Product {
         address payable owner;
@@ -49,14 +65,13 @@ contract CeloPayments {
         _;
     }
 
-    function writeProduct(string memory _name, string memory _description, uint _price) public{
-        uint _sold = 0;
+    function writeProduct(string memory _name, string memory _description, uint _price) public {
         products[productsLength] = Product(
             payable(msg.sender),
             _name,
             _description,
             _price,
-            _sold
+            0
         );
         productsLength++;
     }
@@ -78,35 +93,47 @@ contract CeloPayments {
         );
     }
 
-    function buyProduct(uint _index) public payable {
-        require(
-            IERC20Token(stableToken).transferFrom(
-                msg.sender,
-                products[_index].owner,
-                products[_index].price
-            ),
-            "Transfer failed."
-        );
-        products[_index].sold++;
-    }
+    function buyProduct(uint _index) public {
+    Product storage product = products[_index];
+    uint price = product.price;
+    require(IERC20(stableToken).allowance(msg.sender, address(this)) >= price, "Insufficient allowance");
+    require(IERC20(stableToken).balanceOf(msg.sender) >= price, "Insufficient balance");
+
+    IERC20(stableToken).safeTransferFrom(
+        msg.sender,
+        product.owner,
+        price
+    );
+
+    product.sold++;
+
+    emit ProductSold(msg.sender, product.owner, price);
+}
+
+ 
+
+    error DepositFailed();
 
     function deposit(address user, uint256 amount) external onlyOwner {
-        require(IERC20Token(stableToken).transfer(user, amount), "Transfer failed");
-        emit Deposit(user, amount);
+        balances[user] += amount;
+        try IERC20(stableToken).transferFrom(msg.sender, address(this), amount) {
+            emit Deposit(user, amount);
+        } catch {
+            revert DepositFailed();
+        }
     }
 
     function withdraw(uint256 amount) external {
-        uint256 userBalance = balances[msg.sender];
-        
-        require(userBalance >= amount, "Insufficient balance");
+    uint256 userBalance = balances[msg.sender];
+    
+    require(userBalance >= amount, "Insufficient balance");
 
-        // Update the user's balance before transferring the Ether
-        balances[msg.sender] -= amount;
+    balances[msg.sender] -= amount;
 
-        // Transfer Ether to the user
-        payable(msg.sender).transfer(amount);
-    }
-
+    // Use safeTransfer instead of transfer
+    (bool success, ) = payable(msg.sender).call{value: amount}("");
+    require(success, "Withdrawal failed");
+    }   
 
     function transfer(address recipient, uint256 amount) external {
         require(amount > 0, "Amount must be greater than zero");
@@ -127,8 +154,11 @@ contract CeloPayments {
             repaid: false
         });
 
-        require(IERC20Token(stableToken).transfer(borrower, amount), "borrow failed");
-        emit LoanGranted(provider ,borrower, amount);
+        try IERC20(stableToken).transfer(borrower, amount) {
+            emit LoanGranted(provider, borrower, amount);
+        } catch {
+            revert("Loan Granting Failed");
+        }
     }
 
     function repayLoan() external {
@@ -141,10 +171,12 @@ contract CeloPayments {
         loan.repaid = true;
         loan.amount = 0;
 
-        require(IERC20Token(stableToken).transfer(address(this), amount), "Repayment failed");
-        emit LoanRepaid(borrower, provider, amount);
+        try IERC20(stableToken).transfer(address(this), amount) {
+            emit LoanRepaid(borrower, provider, amount);
+        } catch {
+            revert("Loan Repayment Failed");
+        }
     }
-
     function getProductsLength() public view returns (uint) {
         return (productsLength);
     }
