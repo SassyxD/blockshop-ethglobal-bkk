@@ -19,3 +19,43 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-5px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+@font-face {
+  font-family: "Poppins-ExtraLight";
+  src: url("/fonts/Poppins-ExtraLight.otf") format("opentype");
+  font-weight: 200; 
+  font-style: normal; 
+}
+
+@font-face {
+  font-family: "Poppins-Regular";
+  src: url("/fonts/Poppins-Regular.otf") format("opentype");
+  font-weight: 300; 
+  font-style: normal; 
+}
+
+@font-face {
+  font-family: "Rakkas-Regular";
+  src: url("/fonts/Rakkas-Regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
