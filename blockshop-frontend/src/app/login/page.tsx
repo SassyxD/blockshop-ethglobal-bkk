@@ -8,7 +8,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState(false);
-  const router = useRouter(); // ใช้ useRouter เพื่อการนำทาง
+  const router = useRouter();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -35,14 +35,13 @@ const LoginPage: React.FC = () => {
     validateEmail(email);
 
     if (!emailError && password) {
-      // เมื่อการ validate สำเร็จ ให้เปลี่ยนเส้นทางไปยัง shopping-menu/page.tsx
-      router.push('/shopping-menu?email=${encodeURIComponent(email)}');
+      router.push(`/shopping-menu?email=${encodeURIComponent(email)}`);
     }
   };
 
   const handleSocialLogin = (platform: string) => {
     alert(`Logging in with ${platform}`);
-    // Implement login functionality here
+    // Implement login functionality herex
   };
 
   return (
@@ -54,7 +53,7 @@ const LoginPage: React.FC = () => {
 
       {/* Sign-in Box */}
       <div
-        className="w-full max-w-lg bg-white shadow-lg rounded-3xl p-10 ml-auto m-32"
+        className="w-full max-w-lg bg-white shadow-lg rounded-3xl p-10 ml-auto m-20"
         style={{
           marginRight: '30px',
           borderRadius: '40px',

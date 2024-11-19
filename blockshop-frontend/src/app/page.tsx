@@ -33,7 +33,7 @@ export default function Page() {
   };
 
   if (!isMounted) {
-    return null; // รอจนกว่า component จะ mount
+    return null; 
   }
 
   return (
